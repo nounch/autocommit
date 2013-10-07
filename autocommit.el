@@ -95,15 +95,16 @@
   (unless (file-exists-p (concat (file-name-sans-extension
                                   (buffer-file-name)) auc-git-directory))
     (progn
-      (make-directory auc-git-directory)
-      (cd auc-git-directory)
-      (shell-command "git init --bare")
-      (shell-command "git config core.bare false")
-      (cd "..")
-      (shell-command (concat
-                      "git --git-dir="
-                      auc-git-directory
-                      " commit --allow-empty -m \"Initial commit\"")))))
+      (unless (file-exists-p auc-git-directory)
+	(make-directory auc-git-directory)
+	(cd auc-git-directory)
+	(shell-command "git init --bare")
+	(shell-command "git config core.bare false")
+	(cd "..")
+	(shell-command (concat
+			"git --git-dir="
+			auc-git-directory
+			" commit --allow-empty -m \"Initial commit\""))))))
 
 (defun auc-commit-after-save ()
   "Automatically commit a file whenever it is saved. This requires the file
@@ -119,7 +120,22 @@ to be displayed in the current buffer."
                            current-file-name "\""))))
 
 (define-minor-mode autocommit-mode
-  ""
+  "Automatically commit file changes to Git whenener the current file is
+changed. All changes are made persistent in a `.autocommit' git directory
+so that any pre-existing git repo in the same directory is conserved since
+git chooses the name `.git' by default.
+
+The exact name of the directory, however can be changed using the variable
+`auc-directory-name'.
+
+Whenever the mode is active changes to a file are committed if a
+`.autocommit' directory already exists; if not, one is created and
+correctly populated with github persistence files by automatically.
+
+Caution: Autocommit does not keep track of changes to `auc-directory-name'
+in a directory. So whenever it is changed and `autocommit-mode'
+is re-enabled will re-initialize with the new value of `autocommit' as
+directory name instead of `.autocommit'."
   :init-value nil
   :lighter " auc"
   :group autocommit
